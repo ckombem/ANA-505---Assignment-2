@@ -4,16 +4,25 @@
 # updated... so predictive models, forecasts, and data visualizations
 # produced by this program may differ from those shown in the book
 
+## lines 10 to 14 have a function "libraries". This function connects the user to the location where the R function code packages are stored. 
+## The "quantmod" function enables the extravction of economic data alongside its respective dates using the "lubridate" function. The "latticeExtra" and "forecast" function use this data to set up a time series forecast on a horison plot.
+
 library(quantmod) # use for gathering and charting economic data
 library(lubridate) # date functions
 library(latticeExtra) # package used for horizon plot
 library(forecast) # functions for time series forecasting 
 library(lmtest) # for Granger test of causality
 
+## The code on line 18 below creates a matrix of nrows x ncoloums plots. In this case it will create 4 charts presented in a 2 by 2 display with a chart in each cell.
+
 par(mfrow = c(2,2)) # four plots on one window/page
 
 # Economic Data from Federal Reserve Bank of St. Louis (FRED system)
 # National Civilian Unemployment Rate (monthly, percentage)
+
+## The getSymbols is a wrapper to load data from various sources, local or remote. Data is fetched via one of the available getSymbols methods.
+## It helps pull in the National Civilian Unemployment Rates. The unemployment variable is "UNRATENSA". The gets arrow is used to rename variables (Lines 27 to 32).
+## Line 28. The dimnames() command is used to set or query the row and column names of a matrix (It helps query National Civilian Unemployment Rates).
 getSymbols("UNRATENSA", src="FRED", return.class = "xts")
 ER <- 100 - UNRATENSA # convert to employment rate
 dimnames(ER)[2] <- "ER"
@@ -26,6 +35,10 @@ ER.time.series <- ts(ER.data.frame$ER,
   frequency=12)
 
 # Manufacturers' New Orders: Durable Goods (millions of dollars) 
+
+## The getSymbols is a wrapper to load data from various sources, local or remote. Data is fetched via one of the available getSymbols methods.
+## It helps pull in the data on durable goods. The durable goods variable is "DGORDER". The gets arrow is used to simplify and rename variables (Lines 43 to 49).
+## Line 45. "chartSeries" is a charting tool to create standard financial charts given a time series like object. In our example it charts data on durable goods.
 getSymbols("DGORDER", src="FRED", return.class = "xts")
 DGO <- DGORDER/1000 # convert to billions of dollars
 dimnames(DGO)[2] <- "DGO" # use simple name for index
@@ -39,6 +52,10 @@ DGO.time.series <- ts(DGO.data.frame$DGO,
   frequency=12)
 
 # University of Michigan Index of Consumer Sentiment (1Q 1966 = 100)
+
+## The getSymbols is a wrapper to load data from various sources, local or remote. Data is fetched via one of the available getSymbols methods.
+## It helps pull in the data on Consumer Sentiment. The Consumer Sentiment variable is "UMCSENT". The gets arrow is used to simplify and rename variables (Lines 60 to 66).
+## Line 65. ymd() helps automatically assign the Universal Coordinated Time Zone (UTC) to the parsed dates in the data.
 getSymbols("UMCSENT", src="FRED", return.class = "xts")
 ICS <- UMCSENT # use simple name for xts object
 dimnames(ICS)[2] <- "ICS" # use simple name for index
@@ -52,6 +69,10 @@ ICS.time.series <- ts(ICS.data.frame$ICS,
   frequency=12)
 
 # New Homes Sold in the US, not seasonally adjusted (monthly, millions)
+
+## Line 76. The getSymbols is a wrapper to load data from various sources, local or remote. Data is fetched via one of the available getSymbols methods.
+## It helps pull in the data on New Homes Sold in the US. The New Homes sale variable is "HSN1FNSA". The gets arrow is used to simplify and rename variables (Lines 77 to 83). 
+# Line 83. The ts() function is used to create time-series objects. 
 getSymbols("HSN1FNSA",src="FRED",return.class = "xts")
 NHS <- HSN1FNSA
 dimnames(NHS)[2] <- "NHS" # use simple name for index
@@ -65,17 +86,27 @@ NHS.time.series <- ts(NHS.data.frame$NHS,
   frequency=12)
 
 # define multiple time series object
+
+## Line 93. Line cbind() At this step the gets arrow is used to combine and save the time series details for all four variables (ER, DGO, ICS, and NHS) as "economic.mts" 
+## Line 94 "time.series" gives a time series illustration of a specified variable. The gets arrow is used to simplify and rename variables (Lines 95 to 96)
+
 economic.mts <- cbind(ER.time.series, DGO.time.series, ICS.time.series,
   NHS.time.series) 
   dimnames(economic.mts)[[2]] <- c("ER","DGO","ICS","NHS") # keep simple names 
 modeling.mts <- na.omit(economic.mts) # keep overlapping time intervals only
 
 # plot multiple time series 
+
+## Line 104 "plot" is the function that enables R to plot a graph.
+##  Line 105 "dev.off" returns the number and name of the new active device (after the specified device has been shut down). It indicates a normal termination of a session.
+
 pdf(file="fig_economic_analysis_mts_R.pdf",width = 8.5,height = 11)    
 plot(modeling.mts,main="")
 dev.off()
 
 # create new indexed series IER using base date March 1997
+## LIne 110. mean() calculates the arithmetic mean of the elements of the numeric vector passed to it as argument. 
+
 ER0 <- mean(as.numeric(window(ER.time.series,start=c(1997,3),end=c(1997,3))))
 IER.time.series <- (ER.time.series/ER0) * 100  
 
@@ -88,13 +119,16 @@ NHS0 <- mean(as.numeric(window(NHS.time.series,start=c(1997,3),end=c(1997,3))))
 INHS.time.series <- (NHS.time.series/NHS0) * 100  
 
 # create a multiple time series object from the index series
+## Line 127. The dimnames() command queries the row and column names of a matrix at once. This will impat the time sewies of IER on Line 123.
 economic.mts <- cbind(IER.time.series,
 IDGO.time.series,
 ICS.time.series,
 INHS.time.series) 
 dimnames(economic.mts)[[2]] <- c("IER","IDGO","ICS","INHS")
 working.economic.mts <- na.omit(economic.mts) # months complete for all series
-# partial listing to check calculations
+
+# partial listing to check calculation
+## The print function allows R to print out an image of specified variables. 
 print(head(working.economic.mts))
 
 # plot multiple economic time series as horizon plot
@@ -114,6 +148,8 @@ dev.off()
 # functions from forecast package for time series forecasting 
 
 # ARIMA model fit to the employment rate data
+## The auto.arima() function in R uses a combination of unit root tests, minimization of the AIC and MLE to obtain an ARIMA model.
+## Line 162 to 163 helps generate a 24 month forecast for the national employment rates variable while line 162 to 167 gives a 2 year forecast for national employment rates.
 ER.auto.arima.fit <- auto.arima(ER.time.series, d=NA, D=NA, max.p=3, max.q=3,
   max.P=2, max.Q=2, max.order=3, start.p=2, start.q=2,
   start.P=1, start.Q=1, stationary=FALSE, seasonal=TRUE,
@@ -132,6 +168,8 @@ plot(ER.forecast,main="", ylab="Employment Rate (100 - Unemployment Rate)",
 dev.off()
 
 # ARIMA model fit to the manufacturers' durable goods orders
+## The auto.arima() function in R uses a combination of unit root tests, minimization of the AIC and MLE to obtain an ARIMA model.
+## Line 182 to 183 helps generate a 24 month forecast for the durable goods orders variable while line 182 to 187 gives a 2 year forecast for national employment rates.
 DGO.auto.arima.fit <- auto.arima(DGO.time.series, d=NA, D=NA, max.p=3, max.q=3,
   max.P=2, max.Q=2, max.order=3, start.p=2, start.q=2,
   start.P=1, start.Q=1, stationary=FALSE, seasonal=TRUE,
@@ -150,6 +188,7 @@ plot(DGO.forecast,main="", ylab="Durable Goods Orders (billions of dollars)",
 dev.off()  
 
 # ARIMA model fit to index of consumer sentiment
+## Line 201 to 202 helps generate a 24 month forecast for the consumer sentiment variable while line 204 to 206 gives a 2 year forecast for national employment rates.
 ICS.auto.arima.fit <- auto.arima(ICS.time.series, d=NA, D=NA, max.p=3, max.q=3,
   max.P=2, max.Q=2, max.order=3, start.p=2, start.q=2,
   start.P=1, start.Q=1, stationary=FALSE, seasonal=TRUE,
@@ -168,6 +207,7 @@ plot(ICS.forecast,main="", ylab="Index of Consumer Sentiment (1Q 1966 = 100)",
 dev.off()
 
 # ARIMA model fit to new home sales
+## Line 220 to 221 helps generate a 24 month forecast for the new home sales variable while line 223 to 225 gives a 2 year forecast for national employment rates.
 NHS.auto.arima.fit <- auto.arima(NHS.time.series, d=NA, D=NA, max.p=3, max.q=3,
   max.P=2, max.Q=2, max.order=3, start.p=2, start.q=2,
   start.P=1, start.Q=1, stationary=FALSE, seasonal=TRUE,
@@ -189,6 +229,7 @@ dev.off()
 # look for relationships across three of the time series
 # using the period of overlap for those series
 # function from lmtest package for Granger test of causality
+## Line 233 to 238. The grangertest()function is a generic function for performing a test for Granger causality.
 grangertest(ICS~ER, order = 3, data=modeling.mts)
 grangertest(ICS~DGO, order = 3, data=modeling.mts)
 grangertest(DGO~ER, order = 3, data=modeling.mts)
@@ -197,6 +238,7 @@ grangertest(ER~DGO, order = 3, data=modeling.mts)
 grangertest(ER~ICS, order = 3, data=modeling.mts)
 
 # export data frames for economic measures 
+## Line 242 to 245. The function "write.csv()" ensures that the dat is saved as a csv file.
 write.csv(ER.data.frame, file = "FRED_ER_data.csv", row.names = FALSE)
 write.csv(DGO.data.frame, file = "FRED_DGO_data.csv", row.names = FALSE)
 write.csv(ICS.data.frame, file = "FRED_ICS_data.csv", row.names = FALSE)
